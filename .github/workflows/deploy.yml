@@ -1,0 +1,27 @@
+name: Firriyal Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/student/student4
+            git pull origin main
+            docker build -t student4-app .
+            docker rm -f student4 || true
+            docker run -d -p 8004:8000 --env-file /home/student/student4/.env --name student4 student4-app
