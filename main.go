@@ -2,32 +2,60 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
+type User struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+var users = []User{
+	{ID: 1, Name: "Budi"},
+	{ID: 2, Name: "Sari"},
+}
+
 func main() {
 	_ = godotenv.Load()
 
 	r := gin.Default()
 
-	r.GET("/v1/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Pong!",
+	// GET /api/users
+	r.GET("/api/users", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    users,
 		})
 	})
 
-	r.GET("/v1/greeting", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello, Firriyal!",
-		})
-	})
+	// POST /api/users
+	r.POST("/api/users", func(c *gin.Context) {
+		var newUser struct {
+			Name string `json:"name"`
+		}
 
-	r.GET("/v1/about", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Ini adalah hands-on deployment VPS pada bootcamp dibimbing",
+		if err := c.ShouldBindJSON(&newUser); err != nil || newUser.Name == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "Name is required",
+			})
+			return
+		}
+
+		user := User{
+			ID:   len(users) + 1,
+			Name: newUser.Name,
+		}
+		users = append(users, user)
+
+		c.JSON(http.StatusCreated, gin.H{
+			"success": true,
+			"message": "User added",
+			"data":    user,
 		})
 	})
 
